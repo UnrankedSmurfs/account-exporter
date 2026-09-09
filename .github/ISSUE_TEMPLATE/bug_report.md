@@ -1,34 +1,24 @@
 ---
 name: Bug report
-about: Create a report to help us improve
-title: ''
-labels: ''
-assignees: ''
-
+about: Something in the exporter did not work
+labels: bug
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+**What happened**
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+**What you expected**
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+**Steps to reproduce**
+1.
+2.
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+**Environment**
+- Exporter version:
+- Windows version:
+- League client running and signed in? yes / no
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Version [e.g. 22]
+**Status message**
+<!-- The text shown at the bottom of the exporter window, if any. -->
 
-**Log File:**
- - copy contents of log.txt 
-
-**Additional context**
-Add any other context about the problem here.
+<!-- Please do not paste account credentials. The exporter never reads them and
+     this project never needs them. -->

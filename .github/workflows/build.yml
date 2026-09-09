@@ -1,0 +1,38 @@
+name: build
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    # WPF only builds on Windows.
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore src/UnrankedSmurfs.AccountExporter/UnrankedSmurfs.AccountExporter.csproj
+
+      - name: Build
+        run: dotnet build src/UnrankedSmurfs.AccountExporter/UnrankedSmurfs.AccountExporter.csproj -c Release --no-restore
+
+      - name: Publish (framework-dependent, single file)
+        run: >
+          dotnet publish src/UnrankedSmurfs.AccountExporter/UnrankedSmurfs.AccountExporter.csproj
+          -c Release -r win-x64 --self-contained false
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -o publish
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: UnrankedSmurfs.AccountExporter-win-x64
+          path: publish/UnrankedSmurfs.AccountExporter.exe
+          if-no-files-found: error

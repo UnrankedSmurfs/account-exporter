@@ -1,0 +1,88 @@
+# Export format
+
+The file the exporter writes, and the contract the UnrankedSmurfs importer
+reads. Version this document alongside `ExportWriter.Schema`.
+
+## Envelope
+
+```json
+{
+  "schema": "unrankedsmurfs.account-export",
+  "version": 1,
+  "generator": "UnrankedSmurfs Account Exporter 1.0.0",
+  "exportedAt": "2026-09-09T10:24:31.0000000+00:00",
+  "accounts": []
+}
+```
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `schema` | string | Always `unrankedsmurfs.account-export`. Reject anything else. |
+| `version` | int | Bumped on breaking changes to `accountData`. |
+| `generator` | string | Tool name and version, for support triage. |
+| `exportedAt` | string | ISO 8601 round-trip (`o`) timestamp, UTC. |
+| `accounts` | array | One entry per captured account. May be empty. |
+
+## Account entry
+
+```json
+{
+  "game": "league-of-legends",
+  "accountData": {
+    "region": "EUW",
+    "rank": "GOLD",
+    "level": 142,
+    "blueEssence": 24500,
+    "riotPoint": 1350,
+    "champions": [1, 2, 3],
+    "skins": [1000, 1001]
+  }
+}
+```
+
+`accountData` deliberately mirrors the shape the site's own appraisal wizard
+produces, field name for field name — including the singular `riotPoint` — so
+an imported account and a hand-filled one are indistinguishable downstream.
+
+| Field | Type | Maps to |
+| --- | --- | --- |
+| `region` | string | `regions.name` — `NA`, `EUW`, `EUNE`, `OCE`, `BR`, `LAN`, `LAS`, `RU`, `TR`, `JP`, `PBE` |
+| `rank` | string | Upper-case solo-queue tier, or `UNRANKED`. The site lower-cases it for `AccountProfile::RANK_ORDER`. |
+| `level` | int | `AccountProfile`'s `level` |
+| `blueEssence` | int | `AccountProfile`'s `blue_essence` |
+| `riotPoint` | int | `AccountProfile`'s `riot_points` |
+| `champions` | int[] | Riot champion keys, matching `champions.key` (Annie = 1) |
+| `skins` | int[] | Riot skin ids, matching `skins.id` (Annie's base skin = 1000) |
+
+Both id arrays are sorted ascending and de-duplicated.
+
+### Why ids and not names
+
+Riot's skin ids are the same numbers UnrankedSmurfs already keys its `skins`
+table on, and the champion keys match `champions.key`. Exporting ids means the
+importer needs no name matching, no slug normalisation, and no per-patch lookup
+table — a skin released after the last deploy still imports as a valid id.
+
+`AccountProfile::resolveChampionKeys()` accepts numeric entries as keys
+directly, so `champions` needs no special handling on the site side.
+
+## Fields that are deliberately absent
+
+No username, password, email, PUUID, summoner name or Riot ID appears anywhere
+in the file. The exporter never reads them.
+
+An importer should therefore **reject** any file containing a `username`,
+`password`, `email` or `puuid` key inside `accountData`: a file carrying those
+did not come from this tool.
+
+## Edge cases
+
+| Case | Behaviour |
+| --- | --- |
+| Unranked account | `rank` is `"UNRANKED"` |
+| Region the tool does not know | passed through upper-cased rather than nulled, so a new shard is visible instead of silently lost |
+| Client returned no wallet | `blueEssence` and `riotPoint` are `0` |
+| Client returned no inventory | `champions` / `skins` are `[]` |
+
+A capture that cannot read the current summoner fails outright and adds no row,
+rather than writing a half-populated account.

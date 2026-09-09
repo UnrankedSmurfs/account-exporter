@@ -1,6 +1,7 @@
 MIT License
 
-Copyright (c) 2023 Ja-Sa-La
+Copyright (c) 2023 Ja-Sa-La (League Account Manager, the project this is forked from)
+Copyright (c) 2026 UnrankedSmurfs (UnrankedSmurfs Account Exporter)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

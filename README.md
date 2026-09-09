@@ -1,126 +1,117 @@
-# League Account Manager
+# UnrankedSmurfs Account Exporter
 
-For support join [Discord](https://discord.gg/tjQVcc9SGP)
+Export the cosmetic inventory of your League of Legends accounts to a `.json`
+file you can upload to an [UnrankedSmurfs](https://unrankedsmurfs.com) listing —
+no screenshots, no typing out champion lists by hand.
 
-A WPF utility for managing League of Legends accounts from one place. It uses the League Client API (LCU) only and does not perform exploits. Now with support for Valorant too!
+Open source, MIT licensed, and maintained by UnrankedSmurfs.
 
-## Features
+---
 
-- Store accounts locally (CSV) (optionally you can encrypt the data with AES-GCM) and log in with a click
-- Share accounts without ever having to give your password to anyone
-- Save rank, level, champions, skins, loot, and notes per account
-- Search accounts by region, loot value, champions, and skins
-- Champion buyer (quick purchase flow)
-- Loot manager and disenchanter
-- Queue auto-accept (configurable)
-- Player stats in champ select (queues allowed by Riot only)
-- Profile editor (icon, banner, status, background)
-- Riot ID changer
-- Friend management (bulk remove) and log cleanup
-- Report tool with improved post-game UI
-- Misc tools: log remover, loot value checker, queue helpers, etc.
-- Stealth login (launch/login without showing yourself online)
+## What it reads
 
-## Screenshots
+Exactly seven things, per account:
 
-### Dashboard
-<img src="https://github.com/user-attachments/assets/887ab552-7969-4eed-92d8-0537e7634a7e" width="100%" />
+| Field | Example |
+| --- | --- |
+| Region | `EUW` |
+| Solo-queue rank | `GOLD` |
+| Summoner level | `142` |
+| Blue Essence | `24500` |
+| Riot Points | `1350` |
+| Owned champions | Riot champion keys |
+| Owned skins | Riot skin ids |
 
-### Add Accounts
-<img src="https://github.com/user-attachments/assets/94bb1a3f-4a85-4b20-8865-670b8f5841a5" width="100%" />
+## What it does not read
 
-### Champion Select
-<img src="https://github.com/user-attachments/assets/c08c7d11-c83d-4e8f-99d7-925a77bf7382" width="100%" />
+**Your username, password and email are never read.** They are not collected,
+not stored, and not written to the export file. This is structural, not a
+setting: the app only ever calls six read-only inventory endpoints on the
+local League client, and the type that holds a captured account has no field
+to put a credential in.
 
-### Auto Champion Select
-<img src="https://github.com/user-attachments/assets/811edfbf-7416-4f84-8832-c02bc475642f" width="100%" />
+It also does not:
 
-### Champion Buyer
-<img src="https://github.com/user-attachments/assets/b0ebfad5-9201-4c9d-a269-18406e18b959" width="100%" />
+- upload anything anywhere — the export is a file, and you choose who to send it to
+- log you in, or automate logging in
+- store a list of your accounts between runs
+- modify your League client, your account, or your `hosts` file
 
-### Report Manager
-<img src="https://github.com/user-attachments/assets/50584ce8-41bb-4eb7-8dd1-985d4d7d6955" width="100%" />
+Nothing leaves your PC unless you upload the file yourself.
 
-### Misc Tools
-<img src="https://github.com/user-attachments/assets/59061b09-a74a-4e21-ac21-cf97dce94d98" width="100%" />
+## How to use it
 
-### Profile Editor
-<img src="https://github.com/user-attachments/assets/fdde3f73-743c-4e11-8a6f-1ffb139c1627" width="100%" />
+1. Download the latest `UnrankedSmurfs.AccountExporter.exe` from
+   [Releases](https://github.com/UnrankedSmurfs/account-exporter/releases).
+2. Make sure the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
+   is installed.
+3. Start the League client and sign in to the account you want to export.
+4. Run the exporter and press **Capture current account**.
+5. To add more accounts, sign in to the next one in the League client and press
+   Capture again.
+6. Press **Export .json** and upload the file to your UnrankedSmurfs listing.
 
-### Disenchanter
-<img src="https://github.com/user-attachments/assets/0c016f75-086b-4542-9c2f-efd0d2f0cdaa" width="100%" />
+## Export format
 
-### Settings Manager
-<img src="https://github.com/user-attachments/assets/2903b900-9881-43f3-a21e-f37db8920b4e" width="100%" />
+See [docs/export-format.md](docs/export-format.md) for the full schema.
 
-### Change Riot ID
-<img src="https://github.com/user-attachments/assets/357fdd3b-59d7-46f1-88fa-c4369778df0b" width="600" />
+```json
+{
+  "schema": "unrankedsmurfs.account-export",
+  "version": 1,
+  "generator": "UnrankedSmurfs Account Exporter 1.0.0",
+  "exportedAt": "2026-09-09T10:24:31.0000000+00:00",
+  "accounts": [
+    {
+      "game": "league-of-legends",
+      "accountData": {
+        "region": "EUW",
+        "rank": "GOLD",
+        "level": 142,
+        "blueEssence": 24500,
+        "riotPoint": 1350,
+        "champions": [1, 2, 3],
+        "skins": [1000, 1001]
+      }
+    }
+  ]
+}
+```
 
+## Build from source
 
-## UI Pages / Tools
-
-- Dashboard / Home
-- Accounts list and search
-- Champion Buyer
-- Disenchanter / Loot Manager
-- Misc Tools (log cleanup, queue helpers, loot value, etc.)
-- Profile Editor (icon/status/background)
-- Change Riot ID
-- Friend Manager (Display inactive ones and bulk remove)
-- Report Tool
-- Settings
-
-## Requirements
-
-- Windows
-- .NET 8 Desktop Runtime for the packaged app
-- .NET 10 SDK for building and testing from source
-
-## Install & Run (binary)
-
-1) [Download](https://github.com/Ja-Sa-La/League-Account-Manager/releases) the latest release build
-2) Ensure .NET 8 Desktop Runtime is installed
-3) Run `League Account Manager.exe`
-4) If League permissions block some operations, start the app as Administrator
-
-## Build from Source
+Requires Windows and the .NET 8 SDK (WPF does not build on Linux or macOS).
 
 ```powershell
-git clone https://github.com/Ja-Sa-La/League-Account-Manager.git
-cd League-Account-Manager
-dotnet restore
-dotnet build League_Account_Manager/League_Account_Manager.csproj -c Release
-dotnet run --project League_Account_Manager/League_Account_Manager.csproj
+git clone https://github.com/UnrankedSmurfs/account-exporter.git
+cd account-exporter
+dotnet build src/UnrankedSmurfs.AccountExporter/UnrankedSmurfs.AccountExporter.csproj -c Release
+dotnet run --project src/UnrankedSmurfs.AccountExporter/UnrankedSmurfs.AccountExporter.csproj
 ```
 
-Windows batch scripts are also available from the repository root:
+## Is this allowed?
 
-```bat
-build.bat
-test.bat
-publish.bat
-```
+The exporter reads your own account's inventory through the League Client
+Update (LCU) API that the client itself uses locally. It does not automate
+gameplay, does not touch the game process, and performs no writes of any kind.
 
-`build.bat` and `test.bat` default to Release. Pass `Debug` as the first argument to use the Debug configuration. `publish.bat` creates a framework-dependent, single-file `win-x64` build in `artifacts\win-x64`.
+Selling or buying League accounts is against Riot's Terms of Service. This tool
+does not sell accounts and takes no position on that — it reads an inventory and
+writes a file. What you do with the file is your decision.
 
-## Tests
+## Credits
 
-```powershell
-dotnet test League_Account_Manager.Tests/League_Account_Manager.Tests.csproj
-```
+Forked from [League Account Manager](https://github.com/Ja-Sa-La/League-Account-Manager)
+by [Ja-Sa-La](https://github.com/Ja-Sa-La), which is MIT licensed. The LCU
+connection layer (`src/UnrankedSmurfs.AccountExporter/Lcu/`) is their work,
+and the inventory endpoints this tool reads were mapped by that project first.
+Thank you.
 
-See [Testing](docs/testing.md) for coverage commands and integration-test boundaries.
+This fork strips the upstream account manager down to a single job — read
+cosmetics, write JSON — and removes credential storage, login automation,
+stealth login, the report tool, the disenchanter, and all client-modifying
+features. If you want those, use the excellent upstream project instead.
 
-## Privacy & Safety
+## License
 
-- All account data stays on your machine (local CSV)
-- Uses only LCU endpoints; no automation via autoclickers
-
-## Troubleshooting
-
-- Run as Administrator if file access or League permissions fail
-- Ensure the League Client is running when using LCU-dependent features
-
-## Contributing
-
-PRs and issues are welcome. Please keep changes within Riot’s ToS and LCU guidelines.
+[MIT](LICENSE.md).
