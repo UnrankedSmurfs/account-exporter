@@ -18,11 +18,21 @@ internal static class ExportWriter
 {
     public const string Schema = "unrankedsmurfs.account-export";
     /// <summary>
-    ///     2 added `chromas` and `summonerIcons` to `accountData`. Both are
-    ///     additive: a reader written against version 1 gets every field it
-    ///     knew about, in the same shape, and can ignore the two new arrays.
+    ///     2 added `chromas` and `summonerIcons` to `accountData`. Both were
+    ///     additive: a reader written against version 1 got every field it knew
+    ///     about, in the same shape, and could ignore the two new arrays.
+    ///
+    ///     3 moved Teamfight Tactics content out of `champions`, `skins` and
+    ///     `chromas` into `tftCompanions`, `tftSkins` and `tftChromas`. This
+    ///     one is **not** additive, which is why it is a version rather than a
+    ///     patch: the three original arrays keep their names and types but no
+    ///     longer carry the same ids. Versions 1 and 2 counted a TFT tactician
+    ///     as a champion and its skins as champion skins — on the first real
+    ///     capture, 63 of 236 "champions" and 226 of 767 "skins". A reader that
+    ///     assumes a version 2 file is League-only is reading numbers that are
+    ///     roughly a quarter too high.
     /// </summary>
-    public const int Version = 2;
+    public const int Version = 3;
     private const string Game = "league-of-legends";
 
     public static string Serialize(IEnumerable<AccountSnapshot> snapshots)
@@ -44,6 +54,12 @@ internal static class ExportWriter
                     ["skins"] = new JArray(snapshot.SkinIds),
                     ["chromas"] = new JArray(snapshot.ChromaIds),
                     ["summonerIcons"] = new JArray(snapshot.SummonerIconIds),
+                    // Teamfight Tactics, kept whole but kept apart: the site
+                    // has no TFT catalog, and folding these into `champions`
+                    // and `skins` is what made version 2's counts wrong.
+                    ["tftCompanions"] = new JArray(snapshot.TftCompanionKeys),
+                    ["tftSkins"] = new JArray(snapshot.TftSkinIds),
+                    ["tftChromas"] = new JArray(snapshot.TftChromaIds),
                 },
             });
         }

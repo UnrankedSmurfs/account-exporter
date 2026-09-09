@@ -50,7 +50,7 @@
                 <TextBlock Text="What this tool reads" Style="{StaticResource SectionTitleStyle}" />
                 <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" FontSize="12"
                            Foreground="{StaticResource TextSecondaryBrush}"
-                           Text="Region, rank, level, Blue Essence, RP, owned champions, owned skins, owned chromas and owned profile icons — nothing else. Your username, password and email are never read and never leave your PC. Nothing is uploaded anywhere; the export is a file you choose to share." />
+                           Text="Region, rank, level, Blue Essence, RP, owned champions, owned skins, owned chromas, owned profile icons, and owned Teamfight Tactics tacticians and their skins — nothing else. Your username, password and email are never read and never leave your PC. Nothing is uploaded anywhere; the export is a file you choose to share." />
             </StackPanel>
         </Border>
 
@@ -74,15 +74,22 @@
                           HeadersVisibility="Column" GridLinesVisibility="Horizontal" Background="Transparent"
                           BorderThickness="0" CanUserAddRows="False" Visibility="Collapsed">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Region" Binding="{Binding Region}" Width="84" />
-                        <DataGridTextColumn Header="Rank" Binding="{Binding RankDisplay}" Width="110" />
-                        <DataGridTextColumn Header="Level" Binding="{Binding Level}" Width="64" />
-                        <DataGridTextColumn Header="Blue Essence" Binding="{Binding BlueEssence, StringFormat=N0}" Width="104" />
-                        <DataGridTextColumn Header="RP" Binding="{Binding RiotPoints, StringFormat=N0}" Width="84" />
-                        <DataGridTextColumn Header="Champions" Binding="{Binding ChampionCount}" Width="96" />
-                        <DataGridTextColumn Header="Skins" Binding="{Binding SkinCount}" Width="80" />
-                        <DataGridTextColumn Header="Chromas" Binding="{Binding ChromaCount}" Width="88" />
-                        <DataGridTextColumn Header="Profile icons" Binding="{Binding SummonerIconCount}" Width="*" />
+                        <DataGridTextColumn Header="Region" Binding="{Binding Region}" Width="80" />
+                        <DataGridTextColumn Header="Rank" Binding="{Binding RankDisplay}" Width="100" />
+                        <DataGridTextColumn Header="Level" Binding="{Binding Level}" Width="60" />
+                        <DataGridTextColumn Header="Blue Essence" Binding="{Binding BlueEssence, StringFormat=N0}" Width="100" />
+                        <DataGridTextColumn Header="RP" Binding="{Binding RiotPoints, StringFormat=N0}" Width="80" />
+                        <DataGridTextColumn Header="Champions" Binding="{Binding ChampionCount}" Width="92" />
+                        <DataGridTextColumn Header="Skins" Binding="{Binding SkinCount}" Width="74" />
+                        <DataGridTextColumn Header="Chromas" Binding="{Binding ChromaCount}" Width="82" />
+                        <DataGridTextColumn Header="Profile icons" Binding="{Binding SummonerIconCount}" Width="96" />
+                        <!--
+                            Teamfight Tactics, shown so the League columns can be
+                            trusted. Through v0.9.0 these were counted as champions
+                            and skins; seeing them in their own column is what makes
+                            that visibly no longer the case.
+                        -->
+                        <DataGridTextColumn Header="TFT" Binding="{Binding TftCompanionCount}" Width="*" />
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>

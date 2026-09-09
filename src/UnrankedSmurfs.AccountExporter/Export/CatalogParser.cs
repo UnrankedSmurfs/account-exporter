@@ -5,9 +5,17 @@ namespace UnrankedSmurfs.AccountExporter.Export;
 
 /// <summary>
 ///     What one <c>/lol-catalog/v1/items/CHAMPION_SKIN</c> response says the
-///     account owns, split into the two things the website counts separately.
+///     account owns, split into the four things the website counts separately.
+///
+///     Two axes, both of which the client leaves folded together: skins versus
+///     chromas (<c>subInventoryType</c>), and League versus Teamfight Tactics
+///     (<see cref="RiotIds" />).
 /// </summary>
-internal sealed record OwnedSkinCatalog(IReadOnlyList<int> SkinIds, IReadOnlyList<int> ChromaIds);
+internal sealed record OwnedSkinCatalog(
+    IReadOnlyList<int> SkinIds,
+    IReadOnlyList<int> ChromaIds,
+    IReadOnlyList<int> TftSkinIds,
+    IReadOnlyList<int> TftChromaIds);
 
 /// <summary>
 ///     Reads the LCU catalog responses (<c>/lol-catalog/v1/items/{type}</c>).
@@ -34,7 +42,11 @@ internal static class CatalogParser
     /// </summary>
     private static readonly string[] ChromaSubInventoryTypes = ["RECOLOR", "CHROMA"];
 
-    /// <summary>Owned item ids from a flat catalog, ascending and de-duplicated.</summary>
+    /// <summary>
+    ///     Owned item ids from a flat catalog, ascending and de-duplicated.
+    ///     Used for summoner icons, which are one namespace with no League/TFT
+    ///     split to make: an icon is an icon.
+    /// </summary>
     public static IReadOnlyList<int> OwnedItemIds(string? body)
     {
         var items = Parse(body);
@@ -53,7 +65,8 @@ internal static class CatalogParser
     }
 
     /// <summary>
-    ///     Owned skins and owned chromas from the single skin-catalog response.
+    ///     Owned skins and chromas from the single skin-catalog response, with
+    ///     Teamfight Tactics content kept in its own lists.
     ///
     ///     Chroma ids share Riot's skin numbering — a chroma of a champion's
     ///     skin simply takes the next free `championKey * 1000 + n` slot — so
@@ -71,10 +84,12 @@ internal static class CatalogParser
     public static OwnedSkinCatalog OwnedSkinsAndChromas(string? body)
     {
         var items = Parse(body);
-        if (items == null) return new OwnedSkinCatalog([], []);
+        if (items == null) return new OwnedSkinCatalog([], [], [], []);
 
         var skins = new SortedSet<int>();
         var chromas = new SortedSet<int>();
+        var tftSkins = new SortedSet<int>();
+        var tftChromas = new SortedSet<int>();
 
         foreach (var item in items)
         {
@@ -87,10 +102,18 @@ internal static class CatalogParser
             var isChroma = subType != null
                 && ChromaSubInventoryTypes.Contains(subType.Trim(), StringComparer.OrdinalIgnoreCase);
 
-            (isChroma ? chromas : skins).Add(id.Value);
+            var bucket = (RiotIds.IsLeagueSkinId(id.Value), isChroma) switch
+            {
+                (true, false) => skins,
+                (true, true) => chromas,
+                (false, false) => tftSkins,
+                (false, true) => tftChromas,
+            };
+
+            bucket.Add(id.Value);
         }
 
-        return new OwnedSkinCatalog([.. skins], [.. chromas]);
+        return new OwnedSkinCatalog([.. skins], [.. chromas], [.. tftSkins], [.. tftChromas]);
     }
 
     /// <summary>

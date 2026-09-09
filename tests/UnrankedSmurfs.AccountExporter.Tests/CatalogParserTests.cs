@@ -28,6 +28,45 @@ public class CatalogParserTests
         Assert.Equal(new[] { 103029, 103030 }, catalog.ChromaIds);
     }
 
+    /// <summary>
+    ///     Both axes at once, which is the case the client actually presents:
+    ///     skin-versus-chroma comes from `subInventoryType`, League-versus-TFT
+    ///     from the id. Ids are real ones from the first real capture.
+    /// </summary>
+    [Fact]
+    public void The_catalog_splits_on_both_axes_at_once()
+    {
+        var catalog = CatalogParser.OwnedSkinsAndChromas(
+            """
+            [
+              {"itemId":103028,"owned":true,"subInventoryType":""},
+              {"itemId":103029,"owned":true,"subInventoryType":"RECOLOR"},
+              {"itemId":60001004,"owned":true,"subInventoryType":""},
+              {"itemId":60001305,"owned":true,"subInventoryType":"RECOLOR"}
+            ]
+            """);
+
+        Assert.Equal(new[] { 103028 }, catalog.SkinIds);
+        Assert.Equal(new[] { 103029 }, catalog.ChromaIds);
+        Assert.Equal(new[] { 60001004 }, catalog.TftSkinIds);
+        Assert.Equal(new[] { 60001305 }, catalog.TftChromaIds);
+    }
+
+    /// <summary>
+    ///     The regression this whole split exists for. Through v0.9.0 a TFT
+    ///     tactician skin landed in `skins`, so a real account advertised 767
+    ///     skins when 539 were League skins.
+    /// </summary>
+    [Fact]
+    public void A_tactician_skin_never_lands_in_the_league_skin_list()
+    {
+        var catalog = CatalogParser.OwnedSkinsAndChromas(
+            """[{"itemId":60117037,"owned":true},{"itemId":1004,"owned":true}]""");
+
+        Assert.Equal(new[] { 1004 }, catalog.SkinIds);
+        Assert.Equal(new[] { 60117037 }, catalog.TftSkinIds);
+    }
+
     [Fact]
     public void Unowned_items_are_in_neither_list()
     {
@@ -137,6 +176,8 @@ public class CatalogParserTests
 
         Assert.Empty(catalog.SkinIds);
         Assert.Empty(catalog.ChromaIds);
+        Assert.Empty(catalog.TftSkinIds);
+        Assert.Empty(catalog.TftChromaIds);
         Assert.Empty(CatalogParser.OwnedItemIds(body));
     }
 }

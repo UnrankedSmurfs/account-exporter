@@ -3,7 +3,8 @@ namespace UnrankedSmurfs.AccountExporter.Export;
 /// <summary>
 ///     One captured account, holding only what an UnrankedSmurfs listing
 ///     displays: where it plays, what it ranked, and what cosmetics it owns
-///     — champions, skins, chromas and profile icons.
+///     — champions, skins, chromas and profile icons, with Teamfight Tactics
+///     content counted separately from League's.
 ///
 ///     There is deliberately no username, password, email, PUUID or summoner
 ///     name on this type. The capture pipeline never reads those fields, so
@@ -45,6 +46,23 @@ internal sealed class AccountSnapshot
     public required IReadOnlyList<int> SummonerIconIds { get; init; }
 
     /// <summary>
+    ///     Teamfight Tactics companions ("tacticians"), and their skins and
+    ///     chromas.
+    ///
+    ///     The client returns these from the same two routes it returns League
+    ///     champions and skins from, so they have to be separated somewhere.
+    ///     They are kept rather than dropped because an account that owns 63 of
+    ///     them owns something, and throwing it away would be a decision this
+    ///     tool has no standing to make — but they are kept apart, because
+    ///     counting a tactician as a champion overstates what is for sale.
+    /// </summary>
+    public required IReadOnlyList<int> TftCompanionKeys { get; init; }
+
+    public required IReadOnlyList<int> TftSkinIds { get; init; }
+
+    public required IReadOnlyList<int> TftChromaIds { get; init; }
+
+    /// <summary>
     ///     Bindable counts. The backing collections are arrays, which expose
     ///     `Length` rather than a public `Count`, so binding straight to
     ///     `ChampionKeys.Count` would silently resolve to nothing.
@@ -56,6 +74,10 @@ internal sealed class AccountSnapshot
     public int ChromaCount => ChromaIds.Count;
 
     public int SummonerIconCount => SummonerIconIds.Count;
+
+    public int TftCompanionCount => TftCompanionKeys.Count;
+
+    public int TftSkinCount => TftSkinIds.Count;
 
     /// <summary>"GOLD" reads as shouting in a table; "Gold" does not.</summary>
     public string RankDisplay => TitleCase(Rank);
