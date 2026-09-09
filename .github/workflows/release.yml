@@ -96,7 +96,8 @@ jobs:
 
           ## What this build reads
 
-          Region, rank, level, Blue Essence, RP, owned champions and owned skins.
+          Region, rank, level, Blue Essence, RP, owned champions, owned skins,
+          owned chromas and owned profile icons.
 
           Your username, password and email are never read and never leave your PC.
           Nothing is uploaded anywhere — the export is a file you choose to share.
