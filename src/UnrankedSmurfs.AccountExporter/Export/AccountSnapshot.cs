@@ -2,7 +2,8 @@ namespace UnrankedSmurfs.AccountExporter.Export;
 
 /// <summary>
 ///     One captured account, holding only what an UnrankedSmurfs listing
-///     displays: where it plays, what it ranked, and what cosmetics it owns.
+///     displays: where it plays, what it ranked, and what cosmetics it owns
+///     — champions, skins, chromas and profile icons.
 ///
 ///     There is deliberately no username, password, email, PUUID or summoner
 ///     name on this type. The capture pipeline never reads those fields, so
@@ -30,6 +31,20 @@ internal sealed class AccountSnapshot
     public required IReadOnlyList<int> SkinIds { get; init; }
 
     /// <summary>
+    ///     Riot chroma ids. Chromas share the skin numbering space rather than
+    ///     having one of their own, so these are kept apart from
+    ///     <see cref="SkinIds" /> instead of being folded in: the website's
+    ///     `skins` table has no row for a chroma id.
+    /// </summary>
+    public required IReadOnlyList<int> ChromaIds { get; init; }
+
+    /// <summary>
+    ///     Riot summoner-icon ids, matching `summoner_icons.provider_id` on the
+    ///     website. Called "profile icons" everywhere a player sees them.
+    /// </summary>
+    public required IReadOnlyList<int> SummonerIconIds { get; init; }
+
+    /// <summary>
     ///     Bindable counts. The backing collections are arrays, which expose
     ///     `Length` rather than a public `Count`, so binding straight to
     ///     `ChampionKeys.Count` would silently resolve to nothing.
@@ -37,6 +52,10 @@ internal sealed class AccountSnapshot
     public int ChampionCount => ChampionKeys.Count;
 
     public int SkinCount => SkinIds.Count;
+
+    public int ChromaCount => ChromaIds.Count;
+
+    public int SummonerIconCount => SummonerIconIds.Count;
 
     /// <summary>"GOLD" reads as shouting in a table; "Gold" does not.</summary>
     public string RankDisplay => TitleCase(Rank);
