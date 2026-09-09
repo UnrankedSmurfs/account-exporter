@@ -13,15 +13,24 @@ shape — see [docs/export-format.md](docs/export-format.md).
 
 ### Known gaps
 
-- The application icon is still the upstream project's artwork, and the in-app
-  accent is still the fork's blue rather than UnrankedSmurfs gold. Tracked in
-  [BRANDING-HANDOFF-PROMPT.md](BRANDING-HANDOFF-PROMPT.md).
+- Nobody has run the app on Windows against a live League client yet, so how
+  the window actually renders is unconfirmed. CI constructs the real window
+  against the real application resources and lays out a populated grid, which
+  is evidence that it starts, not that it looks right.
+- Chromas are separated from skins on the client's `subInventoryType: RECOLOR`
+  tag, which has not been observed on a live client. An absent or unrecognised
+  tag files the item as a skin, so the failure mode is an empty `chromas` array
+  rather than lost ids.
 - Nothing on unrankedsmurfs.com ingests the exported file yet; the import
   endpoint is a separate piece of work.
 
-## [1.0.0] — unreleased
+## [0.9.0] — 2026-09-09
 
-First release of the exporter, forked from
+First public build, released as a **pre-release**: functionally complete,
+branded, and green on CI, but not yet run against a live League client by a
+human. `1.0.0` is reserved for the hand-verified build.
+
+Forked from
 [League Account Manager](https://github.com/Ja-Sa-La/League-Account-Manager)
 by [Ja-Sa-La](https://github.com/Ja-Sa-La) (MIT) and reduced to a single job.
 
@@ -29,12 +38,18 @@ by [Ja-Sa-La](https://github.com/Ja-Sa-La) (MIT) and reduced to a single job.
 
 - Capture the cosmetic inventory of the account signed into the League client:
   region, solo-queue tier, summoner level, Blue Essence, RP, owned champion
-  keys and owned skin ids.
+  keys, owned skin ids, owned chroma ids and owned profile-icon ids.
 - Export those accounts as JSON in the shape the UnrankedSmurfs listing
-  importer reads — schema `unrankedsmurfs.account-export`, version 1. Champion
+  importer reads — schema `unrankedsmurfs.account-export`, version 2. Champion
   keys and skin ids are Riot's own numbers, which are already what the site's
   `champions.key` and `skins.id` are keyed on, so no name matching is involved
   anywhere.
+- The UnrankedSmurfs identity: the winged shield from the website's logo as a
+  nine-frame icon (16–256), and the design system's palette — gold `#F7B733` on
+  `#131313`. Capture and Export are gold; every other button stays neutral.
+- Chromas are kept out of `skins`. They share Riot's skin numbering, so an
+  unsplit list puts ids into `skins` that match no row on the site and inflate
+  the skin count with entries nothing can name.
 - Re-capturing an account already in the list updates that row instead of
   adding a duplicate.
 - Region normalisation from the client's inconsistent shard codes (`OC1`,
@@ -51,8 +66,8 @@ by [Ja-Sa-La](https://github.com/Ja-Sa-La) (MIT) and reduced to a single job.
 - **The exporter never reads a username, password or email.** `AccountSnapshot`
   has no field to hold one, so credentials cannot reach the export file even by
   accident — the guarantee is structural, not a filter that can be forgotten.
-- Six read-only LCU GETs, no writes. Nothing is uploaded; the export is a local
-  file.
+- Seven read-only LCU GETs, no writes. Nothing is uploaded; the export is a
+  local file.
 
 ### Removed from upstream
 
@@ -72,5 +87,5 @@ by [Ja-Sa-La](https://github.com/Ja-Sa-La) (MIT) and reduced to a single job.
 - Assembly version now comes from the release tag rather than a T4 template
   that only incremented under Visual Studio.
 
-[Unreleased]: https://github.com/UnrankedSmurfs/account-exporter/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/UnrankedSmurfs/account-exporter/releases/tag/v1.0.0
+[Unreleased]: https://github.com/UnrankedSmurfs/account-exporter/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/UnrankedSmurfs/account-exporter/releases/tag/v0.9.0
