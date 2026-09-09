@@ -13,16 +13,33 @@ shape — see [docs/export-format.md](docs/export-format.md).
 
 ### Known gaps
 
-- Nobody has run the app on Windows against a live League client yet, so how
-  the window actually renders is unconfirmed. CI constructs the real window
-  against the real application resources and lays out a populated grid, which
-  is evidence that it starts, not that it looks right.
-- Chromas are separated from skins on the client's `subInventoryType: RECOLOR`
-  tag, which has not been observed on a live client. An absent or unrecognised
-  tag files the item as a skin, so the failure mode is an empty `chromas` array
-  rather than lost ids.
+- The app has been run against a live League client, but by one person, on one
+  account, on one region.
 - Nothing on unrankedsmurfs.com ingests the exported file yet; the import
   endpoint is a separate piece of work.
+
+## [0.10.0] — 2026-09-09
+
+### Fixed
+
+- **Teamfight Tactics content is no longer counted as League content.** The
+  client files TFT tacticians under the same `CHAMPION` and `CHAMPION_SKIN`
+  inventory types it uses for League champions and skins, so through 0.9.0 a
+  tactician counted as a champion and its skins as champion skins. On the first
+  real capture that was 63 of 236 "champions" and 226 of 767 "skins" — a listing
+  built from that export would have advertised 767 skins when 539 were League
+  skins. Tacticians now export in `tftCompanions`, `tftSkins` and `tftChromas`,
+  and the window shows a TFT column so the League columns can be trusted.
+- Export schema **version 3**. Not additive: `champions`, `skins` and `chromas`
+  keep their names and types but no longer carry TFT ids. An importer reading a
+  version 1 or 2 file has to filter them itself.
+
+### Confirmed
+
+- The chroma split works. `subInventoryType: RECOLOR` had never been seen on a
+  live client when 0.9.0 shipped; the first real capture returned 601 chromas
+  with zero overlap against 767 skins, interleaved in the skin numbering space
+  exactly as the format document predicted.
 
 ## [0.9.0] — 2026-09-09
 
@@ -87,5 +104,6 @@ by [Ja-Sa-La](https://github.com/Ja-Sa-La) (MIT) and reduced to a single job.
 - Assembly version now comes from the release tag rather than a T4 template
   that only incremented under Visual Studio.
 
-[Unreleased]: https://github.com/UnrankedSmurfs/account-exporter/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/UnrankedSmurfs/account-exporter/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/UnrankedSmurfs/account-exporter/releases/tag/v0.10.0
 [0.9.0]: https://github.com/UnrankedSmurfs/account-exporter/releases/tag/v0.9.0

@@ -10,7 +10,7 @@ Open source, MIT licensed, and maintained by UnrankedSmurfs.
 
 ## What it reads
 
-Exactly nine things, per account:
+Exactly twelve things, per account:
 
 | Field | Example |
 | --- | --- |
@@ -23,6 +23,9 @@ Exactly nine things, per account:
 | Owned skins | Riot skin ids |
 | Owned chromas | Riot chroma ids |
 | Owned profile icons | Riot summoner-icon ids |
+| Owned TFT tacticians | Riot companion ids, counted separately |
+| Owned TFT tactician skins | counted separately |
+| Owned TFT tactician chromas | counted separately |
 
 ## What it does not read
 
@@ -60,7 +63,7 @@ See [docs/export-format.md](docs/export-format.md) for the full schema.
 ```json
 {
   "schema": "unrankedsmurfs.account-export",
-  "version": 2,
+  "version": 3,
   "generator": "UnrankedSmurfs Account Exporter 1.0.0",
   "exportedAt": "2026-09-09T10:24:31.0000000+00:00",
   "accounts": [
@@ -75,12 +78,26 @@ See [docs/export-format.md](docs/export-format.md) for the full schema.
         "champions": [1, 2, 3],
         "skins": [1000, 1001],
         "chromas": [103029],
-        "summonerIcons": [7, 4090]
+        "summonerIcons": [7, 4090],
+        "tftCompanions": [60001],
+        "tftSkins": [60001004],
+        "tftChromas": [60001305]
       }
     }
   ]
 }
 ```
+
+## Teamfight Tactics is counted separately
+
+The League client files TFT tacticians under the same inventory types it uses
+for League champions and skins, so a tool that reads them naively counts a
+tactician as a champion. On a real account that was 63 of 236 "champions" and
+226 of 767 "skins" — a listing built from it would have claimed 767 skins when
+539 were League skins.
+
+TFT content is still exported, in its own fields, because owning 63 tacticians
+is owning something. It is just never counted as League.
 
 ## A note on the look
 

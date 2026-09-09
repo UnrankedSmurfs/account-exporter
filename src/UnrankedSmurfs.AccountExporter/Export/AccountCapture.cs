@@ -5,6 +5,15 @@ using UnrankedSmurfs.AccountExporter.Lcu;
 
 namespace UnrankedSmurfs.AccountExporter.Export;
 
+/// <summary>
+///     The champion inventory, with League champions and Teamfight Tactics
+///     companions separated — the client returns both from one route.
+/// </summary>
+internal sealed record OwnedChampions(IReadOnlyList<int> LeagueKeys, IReadOnlyList<int> TftKeys)
+{
+    public static OwnedChampions Empty { get; } = new([], []);
+}
+
 internal sealed record CaptureResult(AccountSnapshot? Snapshot, string? Error)
 {
     public bool Succeeded => Snapshot != null;
@@ -58,7 +67,7 @@ internal static class AccountCapture
         var rankedBody = await GetAsync(RankedEndpoint, cancellationToken);
         var rank = ApiResponseParser.ParseTier(rankedBody == null ? null : ApiResponseParser.ParseRankedStats(rankedBody));
 
-        var championKeys = await GetOwnedChampionKeysAsync(summonerId, cancellationToken);
+        var champions = await GetOwnedChampionKeysAsync(summonerId, cancellationToken);
         var skins = CatalogParser.OwnedSkinsAndChromas(await GetAsync(SkinCatalogEndpoint, cancellationToken));
         var summonerIconIds = CatalogParser.OwnedItemIds(
             await GetAsync(SummonerIconCatalogEndpoint, cancellationToken));
@@ -70,26 +79,33 @@ internal static class AccountCapture
             Level = level,
             BlueEssence = wallet?.BlueEssence ?? 0,
             RiotPoints = wallet?.RiotPoints ?? 0,
-            ChampionKeys = championKeys,
+            ChampionKeys = champions.LeagueKeys,
             SkinIds = skins.SkinIds,
             ChromaIds = skins.ChromaIds,
             SummonerIconIds = summonerIconIds,
+            TftCompanionKeys = champions.TftKeys,
+            TftSkinIds = skins.TftSkinIds,
+            TftChromaIds = skins.TftChromaIds,
         });
     }
 
     /// <summary>
-    ///     Owned champions as Riot keys. `champions-minimal` lists every
-    ///     champion in the game, so ownership has to be filtered here rather
-    ///     than assumed from the response length.
+    ///     Owned champions as Riot keys, with Teamfight Tactics companions kept
+    ///     apart.
+    ///
+    ///     `champions-minimal` lists every champion in the game, so ownership
+    ///     has to be filtered here rather than assumed from the response
+    ///     length — and it lists TFT tacticians alongside them, so the game
+    ///     has to be told apart too. See <see cref="RiotIds" />.
     /// </summary>
-    private static async Task<IReadOnlyList<int>> GetOwnedChampionKeysAsync(
+    private static async Task<OwnedChampions> GetOwnedChampionKeysAsync(
         string summonerId, CancellationToken cancellationToken)
     {
         var body = await GetAsync($"/lol-champions/v1/inventories/{summonerId}/champions-minimal", cancellationToken);
-        if (body == null) return [];
+        if (body == null) return OwnedChampions.Empty;
 
         // An error payload comes back as an object, a good response as an array.
-        if (body.TrimStart().StartsWith('{')) return [];
+        if (body.TrimStart().StartsWith('{')) return OwnedChampions.Empty;
 
         JArray parsed;
         try
@@ -99,20 +115,24 @@ internal static class AccountCapture
         catch (Exception ex)
         {
             Logger.Debug(ex, "Could not parse the champion inventory");
-            return [];
+            return OwnedChampions.Empty;
         }
 
-        var keys = new SortedSet<int>();
+        var league = new SortedSet<int>();
+        var tft = new SortedSet<int>();
+
         foreach (var champion in parsed)
         {
             if (champion["ownership"]?["owned"]?.ToObject<bool?>() != true) continue;
 
             var key = champion["id"]?.ToObject<int?>();
             // Champion id 0 is the "None" placeholder the client returns.
-            if (key is > 0) keys.Add(key.Value);
+            if (key is not > 0) continue;
+
+            (RiotIds.IsLeagueChampionKey(key.Value) ? league : tft).Add(key.Value);
         }
 
-        return [.. keys];
+        return new OwnedChampions([.. league], [.. tft]);
     }
 
     private static async Task<string?> GetAsync(string endpoint, CancellationToken cancellationToken)

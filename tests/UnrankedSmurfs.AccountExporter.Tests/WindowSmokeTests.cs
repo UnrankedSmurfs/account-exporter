@@ -98,6 +98,9 @@ public class WindowSmokeTests
         SkinIds = [1000, 1001, 103000],
         ChromaIds = [103029, 103030],
         SummonerIconIds = [7, 4090],
+        TftCompanionKeys = [60001, 60009],
+        TftSkinIds = [60001004],
+        TftChromaIds = [60001305],
     };
 
     private sealed class BindingErrorListener : TraceListener

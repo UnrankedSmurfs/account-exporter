@@ -92,12 +92,11 @@ jobs:
 
           if [ -n "${{ steps.version.outputs.prerelease }}" ]; then
             cat >> notes.md <<'PRERELEASE'
-          > **Pre-release.** This build is functionally complete and its test suite
-          > passes, but it has not yet been run against a live League client by a
-          > human. In particular, chromas are separated from skins using a tag the
-          > client is expected to send but which nobody has yet observed it send; if
-          > your export shows zero chromas on an account that owns some, that is the
-          > reason and it is worth an issue. Please report anything else odd there too.
+          > **Pre-release.** This build is functionally complete, its test suite
+          > passes, and it has been run against a live League client — but by one
+          > person, on one account, on one region. Counts are worth sanity-checking
+          > against what you know you own before you rely on them, and anything that
+          > looks off is worth an issue.
 
           PRERELEASE
           fi
@@ -119,7 +118,8 @@ jobs:
           ## What this build reads
 
           Region, rank, level, Blue Essence, RP, owned champions, owned skins,
-          owned chromas and owned profile icons.
+          owned chromas, owned profile icons, and owned Teamfight Tactics
+          tacticians and their skins (counted separately from League's).
 
           Your username, password and email are never read and never leave your PC.
           Nothing is uploaded anywhere — the export is a file you choose to share.

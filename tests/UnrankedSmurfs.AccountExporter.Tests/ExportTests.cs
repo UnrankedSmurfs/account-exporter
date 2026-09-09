@@ -16,6 +16,9 @@ public class ExportTests
         SkinIds = [1000, 1001, 103000],
         ChromaIds = [103029, 103030],
         SummonerIconIds = [7, 4090],
+        TftCompanionKeys = [60001, 60009],
+        TftSkinIds = [60001004],
+        TftChromaIds = [60001305],
     };
 
     [Fact]
@@ -24,7 +27,7 @@ public class ExportTests
         var json = JObject.Parse(ExportWriter.Serialize([Sample()]));
 
         Assert.Equal("unrankedsmurfs.account-export", json["schema"]!.Value<string>());
-        Assert.Equal(2, json["version"]!.Value<int>());
+        Assert.Equal(3, json["version"]!.Value<int>());
 
         var account = json["accounts"]!.Single();
         Assert.Equal("league-of-legends", account["game"]!.Value<string>());
@@ -43,23 +46,51 @@ public class ExportTests
         Assert.Equal(new[] { 1000, 1001, 103000 }, data["skins"]!.Values<int>().ToArray());
         Assert.Equal(new[] { 103029, 103030 }, data["chromas"]!.Values<int>().ToArray());
         Assert.Equal(new[] { 7, 4090 }, data["summonerIcons"]!.Values<int>().ToArray());
+        Assert.Equal(new[] { 60001, 60009 }, data["tftCompanions"]!.Values<int>().ToArray());
+        Assert.Equal(new[] { 60001004 }, data["tftSkins"]!.Values<int>().ToArray());
+        Assert.Equal(new[] { 60001305 }, data["tftChromas"]!.Values<int>().ToArray());
     }
 
     /// <summary>
-    ///     Version 2 added two arrays and changed nothing else. A reader written
-    ///     against version 1 must still find every field it knew, in the same
-    ///     place and the same shape, or the bump was breaking after all and the
-    ///     importer needs a migration rather than a default.
+    ///     The full field list, in order. An importer reads these by name, so a
+    ///     rename or a reorder is a contract change and should have to be typed
+    ///     here before it can ship.
     /// </summary>
     [Fact]
-    public void Version_2_only_adds_to_what_version_1_promised()
+    public void Account_data_carries_exactly_the_documented_fields()
     {
         var data = (JObject) JObject.Parse(ExportWriter.Serialize([Sample()]))["accounts"]!
             .Single()["accountData"]!;
 
         Assert.Equal(
-            new[] { "region", "rank", "level", "blueEssence", "riotPoint", "champions", "skins", "chromas", "summonerIcons" },
+            new[]
+            {
+                "region", "rank", "level", "blueEssence", "riotPoint",
+                "champions", "skins", "chromas", "summonerIcons",
+                "tftCompanions", "tftSkins", "tftChromas",
+            },
             data.Properties().Select(p => p.Name).ToArray());
+    }
+
+    /// <summary>
+    ///     Version 3's whole point. Teamfight Tactics companions are not
+    ///     champions and their skins are not champion skins; counting them as
+    ///     such overstated a real account by 63 champions and 226 skins, which
+    ///     on a marketplace is an overstatement of the goods.
+    /// </summary>
+    [Fact]
+    public void Tft_content_never_appears_in_the_league_arrays()
+    {
+        var data = JObject.Parse(ExportWriter.Serialize([Sample()]))["accounts"]!
+            .Single()["accountData"]!;
+
+        foreach (var field in new[] { "champions", "skins", "chromas" })
+        {
+            Assert.DoesNotContain(
+                data[field]!.Values<int>(),
+                id => id >= RiotIds.LeagueChampionKeyCeiling * 1000
+                      || (field == "champions" && id >= RiotIds.LeagueChampionKeyCeiling));
+        }
     }
 
     /// <summary>
