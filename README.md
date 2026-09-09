@@ -10,7 +10,7 @@ Open source, MIT licensed, and maintained by UnrankedSmurfs.
 
 ## What it reads
 
-Exactly seven things, per account:
+Exactly nine things, per account:
 
 | Field | Example |
 | --- | --- |
@@ -21,12 +21,14 @@ Exactly seven things, per account:
 | Riot Points | `1350` |
 | Owned champions | Riot champion keys |
 | Owned skins | Riot skin ids |
+| Owned chromas | Riot chroma ids |
+| Owned profile icons | Riot summoner-icon ids |
 
 ## What it does not read
 
 **Your username, password and email are never read.** They are not collected,
 not stored, and not written to the export file. This is structural, not a
-setting: the app only ever calls six read-only inventory endpoints on the
+setting: the app only ever calls seven read-only inventory endpoints on the
 local League client, and the type that holds a captured account has no field
 to put a credential in.
 
@@ -58,7 +60,7 @@ See [docs/export-format.md](docs/export-format.md) for the full schema.
 ```json
 {
   "schema": "unrankedsmurfs.account-export",
-  "version": 1,
+  "version": 2,
   "generator": "UnrankedSmurfs Account Exporter 1.0.0",
   "exportedAt": "2026-09-09T10:24:31.0000000+00:00",
   "accounts": [
@@ -71,12 +73,24 @@ See [docs/export-format.md](docs/export-format.md) for the full schema.
         "blueEssence": 24500,
         "riotPoint": 1350,
         "champions": [1, 2, 3],
-        "skins": [1000, 1001]
+        "skins": [1000, 1001],
+        "chromas": [103029],
+        "summonerIcons": [7, 4090]
       }
     }
   ]
 }
 ```
+
+## A note on the look
+
+The app follows the UnrankedSmurfs design system for colour — gold `#F7B733`
+on `#131313`, the same palette as the website — but sets type in **Segoe UI
+Variable** rather than the brand's Lato. Lato is not a Windows system font, so
+matching the website exactly would mean embedding the font file in the exe and
+shipping its licence alongside. A desktop utility that looks native is not the
+same failure as a web page that ignores the brand, so v1 stays on the system
+font. Worth revisiting if the exporter ever grows a marketing surface.
 
 ## Build from source
 
