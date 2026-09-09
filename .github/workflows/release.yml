@@ -49,6 +49,14 @@ jobs:
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
+          # 0.x is by definition not the stable release. Marking it keeps the
+          # "Latest release" badge — and every download link that follows it —
+          # pointing at the last stable build rather than a test build.
+          case "$version" in
+            0.*) echo "prerelease=--prerelease" >> "$GITHUB_OUTPUT" ;;
+            *)   echo "prerelease=" >> "$GITHUB_OUTPUT" ;;
+          esac
+
       # The gate: a release must pass the same suite every branch does,
       # including the window smoke tests. A build that cannot construct its
       # own main window must never reach a user.
@@ -80,7 +88,21 @@ jobs:
           TAG: ${{ steps.version.outputs.tag }}
           SHA256: ${{ steps.checksum.outputs.sha256 }}
         run: |
-          cat > notes.md <<NOTES
+          : > notes.md
+
+          if [ -n "${{ steps.version.outputs.prerelease }}" ]; then
+            cat >> notes.md <<'PRERELEASE'
+          > **Pre-release.** This build is functionally complete and its test suite
+          > passes, but it has not yet been run against a live League client by a
+          > human. In particular, chromas are separated from skins using a tag the
+          > client is expected to send but which nobody has yet observed it send; if
+          > your export shows zero chromas on an account that owns some, that is the
+          > reason and it is worth an issue. Please report anything else odd there too.
+
+          PRERELEASE
+          fi
+
+          cat >> notes.md <<NOTES
           ## Install
 
           1. Download \`UnrankedSmurfs.AccountExporter.exe\` below.
@@ -112,4 +134,5 @@ jobs:
             publish/UnrankedSmurfs.AccountExporter.exe \
             publish/SHA256SUMS.txt \
             --title "$TAG" \
-            --notes-file notes.md
+            --notes-file notes.md \
+            ${{ steps.version.outputs.prerelease }}
