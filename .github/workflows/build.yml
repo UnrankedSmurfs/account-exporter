@@ -24,6 +24,11 @@ jobs:
       - name: Build
         run: dotnet build src/UnrankedSmurfs.AccountExporter/UnrankedSmurfs.AccountExporter.csproj -c Release --no-restore
 
+      - name: Test
+        run: >
+          dotnet test tests/UnrankedSmurfs.AccountExporter.Tests/UnrankedSmurfs.AccountExporter.Tests.csproj
+          -c Release --logger "console;verbosity=normal"
+
       - name: Publish (framework-dependent, single file)
         run: >
           dotnet publish src/UnrankedSmurfs.AccountExporter/UnrankedSmurfs.AccountExporter.csproj
