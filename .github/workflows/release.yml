@@ -1,0 +1,114 @@
+name: release
+
+# Cut a release by pushing a tag:
+#
+#   git tag v1.0.0 && git push origin v1.0.0
+#
+# The tag is the single source of truth for the version — it is stamped into
+# the assembly, so the "generator" field of every exported file traces back to
+# an exact build. Never move a tag once published; cut a new patch instead.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build and release (e.g. v1.0.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Resolve version from tag
+        id: version
+        shell: bash
+        run: |
+          tag="${{ github.event.inputs.tag }}"
+          [ -n "$tag" ] || tag="${{ github.ref_name }}"
+          version="${tag#v}"
+
+          if ! echo "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Tag '$tag' is not vMAJOR.MINOR.PATCH — refusing to publish an unversioned build." >&2
+            exit 1
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      # The gate: a release must pass the same suite every branch does,
+      # including the window smoke tests. A build that cannot construct its
+      # own main window must never reach a user.
+      - name: Test
+        run: >
+          dotnet test tests/UnrankedSmurfs.AccountExporter.Tests/UnrankedSmurfs.AccountExporter.Tests.csproj
+          -c Release --logger "console;verbosity=normal"
+
+      - name: Publish
+        run: >
+          dotnet publish src/UnrankedSmurfs.AccountExporter/UnrankedSmurfs.AccountExporter.csproj
+          -c Release -r win-x64 --self-contained false
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:Version=${{ steps.version.outputs.version }}
+          -o publish
+
+      - name: Checksum
+        id: checksum
+        shell: bash
+        working-directory: publish
+        run: |
+          sha256sum UnrankedSmurfs.AccountExporter.exe | tee SHA256SUMS.txt
+          echo "sha256=$(sha256sum UnrankedSmurfs.AccountExporter.exe | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Create release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          SHA256: ${{ steps.checksum.outputs.sha256 }}
+        run: |
+          cat > notes.md <<NOTES
+          ## Install
+
+          1. Download \`UnrankedSmurfs.AccountExporter.exe\` below.
+          2. Install the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) if you do not have it.
+          3. Start the League client, sign in to an account, then run the exporter.
+
+          Windows SmartScreen will warn on first run — this build is not code-signed.
+          Verify the download instead, with \`Get-FileHash\` in PowerShell:
+
+              Get-FileHash UnrankedSmurfs.AccountExporter.exe -Algorithm SHA256
+
+          Expected SHA256: $SHA256
+
+          ## What this build reads
+
+          Region, rank, level, Blue Essence, RP, owned champions and owned skins.
+
+          Your username, password and email are never read and never leave your PC.
+          Nothing is uploaded anywhere — the export is a file you choose to share.
+
+          ## Links
+
+          - [Changelog](https://github.com/UnrankedSmurfs/account-exporter/blob/master/CHANGELOG.md)
+          - [Export format](https://github.com/UnrankedSmurfs/account-exporter/blob/master/docs/export-format.md)
+          NOTES
+
+          gh release create "$TAG" \
+            publish/UnrankedSmurfs.AccountExporter.exe \
+            publish/SHA256SUMS.txt \
+            --title "$TAG" \
+            --notes-file notes.md
