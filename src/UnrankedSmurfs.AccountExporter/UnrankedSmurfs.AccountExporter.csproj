@@ -28,6 +28,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!--
+      The capture, export and theme types are internal on purpose: nothing
+      outside this exe consumes them. The test project is the one exception,
+      so it is named here rather than by widening the types themselves.
+    -->
+    <InternalsVisibleTo Include="UnrankedSmurfs.AccountExporter.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="UnrankedSmurfs.AccountExporter.Tests" />
   </ItemGroup>
 

@@ -8,7 +8,7 @@ reads. Version this document alongside `ExportWriter.Schema`.
 ```json
 {
   "schema": "unrankedsmurfs.account-export",
-  "version": 1,
+  "version": 2,
   "generator": "UnrankedSmurfs Account Exporter 1.0.0",
   "exportedAt": "2026-09-09T10:24:31.0000000+00:00",
   "accounts": []
@@ -18,7 +18,7 @@ reads. Version this document alongside `ExportWriter.Schema`.
 | Field | Type | Notes |
 | --- | --- | --- |
 | `schema` | string | Always `unrankedsmurfs.account-export`. Reject anything else. |
-| `version` | int | Bumped on breaking changes to `accountData`. |
+| `version` | int | Currently `2`. See [Version history](#version-history). |
 | `generator` | string | Tool name and version, for support triage. |
 | `exportedAt` | string | ISO 8601 round-trip (`o`) timestamp, UTC. |
 | `accounts` | array | One entry per captured account. May be empty. |
@@ -35,7 +35,9 @@ reads. Version this document alongside `ExportWriter.Schema`.
     "blueEssence": 24500,
     "riotPoint": 1350,
     "champions": [1, 2, 3],
-    "skins": [1000, 1001]
+    "skins": [1000, 1001],
+    "chromas": [103029, 103030],
+    "summonerIcons": [7, 4090]
   }
 }
 ```
@@ -53,8 +55,36 @@ an imported account and a hand-filled one are indistinguishable downstream.
 | `riotPoint` | int | `AccountProfile`'s `riot_points` |
 | `champions` | int[] | Riot champion keys, matching `champions.key` (Annie = 1) |
 | `skins` | int[] | Riot skin ids, matching `skins.id` (Annie's base skin = 1000) |
+| `chromas` | int[] | Riot chroma ids. No table on the site holds these yet — see below |
+| `summonerIcons` | int[] | Riot summoner-icon ids, matching `summoner_icons.provider_id` |
 
-Both id arrays are sorted ascending and de-duplicated.
+Every id array is sorted ascending and de-duplicated.
+
+### Chromas are not skins
+
+Riot does not give chromas a numbering space of their own. A chroma takes the
+next free `championKey * 1000 + n` slot, right alongside the champion's real
+skins — K/DA Ahri is `103028` and her chromas run from `103029`. So a chroma id
+looks exactly like a skin id and matches no row in `skins`.
+
+The exporter therefore keeps them apart. The client tags them
+(`subInventoryType: "RECOLOR"` in the skin catalog) and the exporter splits on
+that tag, so `skins` stays a list the site can resolve and `chromas` is a
+separate count. An importer that does not care about chromas can ignore the
+array entirely; what it must not do is merge the two back together.
+
+**Caveat.** The `RECOLOR` tag has not been observed against a live client by
+anyone who worked on this file — there is no League install on the machine this
+is built on. The parser is written so that an absent or unrecognised tag files
+the item as a skin, which is precisely what every owned item was before, so the
+worst case is that `chromas` comes back empty and `skins` behaves as it did in
+version 1. It is not a case where ids go missing.
+
+### Profile icons
+
+`summonerIcons` carries Riot's summoner-icon ids, which is what the website's
+`summoner_icons.provider_id` column already stores. "Profile icon" is what a
+player sees the thing called in the client; the two names mean the same thing.
 
 ### Why ids and not names
 
@@ -65,6 +95,16 @@ table — a skin released after the last deploy still imports as a valid id.
 
 `AccountProfile::resolveChampionKeys()` accepts numeric entries as keys
 directly, so `champions` needs no special handling on the site side.
+
+## Version history
+
+| Version | Change |
+| --- | --- |
+| 1 | `region`, `rank`, `level`, `blueEssence`, `riotPoint`, `champions`, `skins`. |
+| 2 | Added `chromas` and `summonerIcons`. Additive only — every version 1 field kept its name, position and type, so a reader written against version 1 can read a version 2 file by ignoring the two new arrays. |
+
+An importer should accept any `version` it knows and reject one it does not,
+rather than assuming the highest it has seen.
 
 ## Fields that are deliberately absent
 
@@ -82,7 +122,8 @@ did not come from this tool.
 | Unranked account | `rank` is `"UNRANKED"` |
 | Region the tool does not know | passed through upper-cased rather than nulled, so a new shard is visible instead of silently lost |
 | Client returned no wallet | `blueEssence` and `riotPoint` are `0` |
-| Client returned no inventory | `champions` / `skins` are `[]` |
+| Client returned no inventory | `champions` / `skins` / `chromas` / `summonerIcons` are `[]` |
+| Client does not tag chromas | every owned item files as a skin; `chromas` is `[]` (see above) |
 
 A capture that cannot read the current summoner fails outright and adds no row,
 rather than writing a half-populated account.

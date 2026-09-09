@@ -17,7 +17,12 @@ namespace UnrankedSmurfs.AccountExporter.Export;
 internal static class ExportWriter
 {
     public const string Schema = "unrankedsmurfs.account-export";
-    public const int Version = 1;
+    /// <summary>
+    ///     2 added `chromas` and `summonerIcons` to `accountData`. Both are
+    ///     additive: a reader written against version 1 gets every field it
+    ///     knew about, in the same shape, and can ignore the two new arrays.
+    /// </summary>
+    public const int Version = 2;
     private const string Game = "league-of-legends";
 
     public static string Serialize(IEnumerable<AccountSnapshot> snapshots)
@@ -37,6 +42,8 @@ internal static class ExportWriter
                     ["riotPoint"] = snapshot.RiotPoints,
                     ["champions"] = new JArray(snapshot.ChampionKeys),
                     ["skins"] = new JArray(snapshot.SkinIds),
+                    ["chromas"] = new JArray(snapshot.ChromaIds),
+                    ["summonerIcons"] = new JArray(snapshot.SummonerIconIds),
                 },
             });
         }

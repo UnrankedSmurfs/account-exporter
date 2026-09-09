@@ -96,6 +96,8 @@ public class WindowSmokeTests
         RiotPoints = 1350,
         ChampionKeys = [1, 103, 84],
         SkinIds = [1000, 1001, 103000],
+        ChromaIds = [103029, 103030],
+        SummonerIconIds = [7, 4090],
     };
 
     private sealed class BindingErrorListener : TraceListener

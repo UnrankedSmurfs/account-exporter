@@ -24,6 +24,13 @@ jobs:
       - name: Build
         run: dotnet build src/UnrankedSmurfs.AccountExporter/UnrankedSmurfs.AccountExporter.csproj -c Release --no-restore
 
+      # A green build was never evidence that the window opens: XAML resource
+      # lookups fail at runtime, not at compile time. These tests construct the
+      # real window against the real application resources, so a renamed brush
+      # fails here instead of on a user's launch.
+      - name: Test
+        run: dotnet test tests/UnrankedSmurfs.AccountExporter.Tests/UnrankedSmurfs.AccountExporter.Tests.csproj -c Release
+
       - name: Test
         run: >
           dotnet test tests/UnrankedSmurfs.AccountExporter.Tests/UnrankedSmurfs.AccountExporter.Tests.csproj

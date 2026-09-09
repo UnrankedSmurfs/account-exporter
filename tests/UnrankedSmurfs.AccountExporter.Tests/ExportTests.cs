@@ -14,6 +14,8 @@ public class ExportTests
         RiotPoints = 1350,
         ChampionKeys = [1, 103, 84],
         SkinIds = [1000, 1001, 103000],
+        ChromaIds = [103029, 103030],
+        SummonerIconIds = [7, 4090],
     };
 
     [Fact]
@@ -22,7 +24,7 @@ public class ExportTests
         var json = JObject.Parse(ExportWriter.Serialize([Sample()]));
 
         Assert.Equal("unrankedsmurfs.account-export", json["schema"]!.Value<string>());
-        Assert.Equal(1, json["version"]!.Value<int>());
+        Assert.Equal(2, json["version"]!.Value<int>());
 
         var account = json["accounts"]!.Single();
         Assert.Equal("league-of-legends", account["game"]!.Value<string>());
@@ -39,6 +41,43 @@ public class ExportTests
 
         Assert.Equal(new[] { 1, 103, 84 }, data["champions"]!.Values<int>().ToArray());
         Assert.Equal(new[] { 1000, 1001, 103000 }, data["skins"]!.Values<int>().ToArray());
+        Assert.Equal(new[] { 103029, 103030 }, data["chromas"]!.Values<int>().ToArray());
+        Assert.Equal(new[] { 7, 4090 }, data["summonerIcons"]!.Values<int>().ToArray());
+    }
+
+    /// <summary>
+    ///     Version 2 added two arrays and changed nothing else. A reader written
+    ///     against version 1 must still find every field it knew, in the same
+    ///     place and the same shape, or the bump was breaking after all and the
+    ///     importer needs a migration rather than a default.
+    /// </summary>
+    [Fact]
+    public void Version_2_only_adds_to_what_version_1_promised()
+    {
+        var data = (JObject) JObject.Parse(ExportWriter.Serialize([Sample()]))["accounts"]!
+            .Single()["accountData"]!;
+
+        Assert.Equal(
+            new[] { "region", "rank", "level", "blueEssence", "riotPoint", "champions", "skins", "chromas", "summonerIcons" },
+            data.Properties().Select(p => p.Name).ToArray());
+    }
+
+    /// <summary>
+    ///     Chroma ids sit in the same numeric space as skin ids — a chroma
+    ///     takes the next free `championKey * 1000 + n` slot — so folding the
+    ///     two together would put ids into `skins` that match no row in the
+    ///     website's `skins` table.
+    /// </summary>
+    [Fact]
+    public void Chromas_are_not_mixed_into_the_skin_list()
+    {
+        var data = JObject.Parse(ExportWriter.Serialize([Sample()]))["accounts"]!
+            .Single()["accountData"]!;
+
+        var skins = data["skins"]!.Values<int>().ToArray();
+
+        Assert.DoesNotContain(103029, skins);
+        Assert.DoesNotContain(103030, skins);
     }
 
     /// <summary>

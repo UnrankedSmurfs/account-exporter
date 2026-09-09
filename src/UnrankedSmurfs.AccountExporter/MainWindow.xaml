@@ -21,7 +21,7 @@
         <StackPanel Grid.Row="0" Margin="0,0,0,18">
             <TextBlock Text="UnrankedSmurfs Account Exporter" Style="{StaticResource PageTitleStyle}" />
             <TextBlock Style="{StaticResource PageSubtitleStyle}" TextWrapping="Wrap"
-                       Text="Capture the champions and skins on your accounts, then export a .json file you can upload to your UnrankedSmurfs listing." />
+                       Text="Capture the champions, skins, chromas and profile icons on your accounts, then export a .json file you can upload to your UnrankedSmurfs listing." />
         </StackPanel>
 
         <!-- Client status -->
@@ -39,6 +39,7 @@
                                Text="Sign in to an account in the League client, then capture it here." />
                 </StackPanel>
                 <Button Grid.Column="1" x:Name="CaptureButton" Content="Capture current account"
+                        Style="{StaticResource PrimaryButtonStyle}"
                         Click="OnCaptureClick" MinWidth="200" Height="38" VerticalAlignment="Center" />
             </Grid>
         </Border>
@@ -49,7 +50,7 @@
                 <TextBlock Text="What this tool reads" Style="{StaticResource SectionTitleStyle}" />
                 <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" FontSize="12"
                            Foreground="{StaticResource TextSecondaryBrush}"
-                           Text="Region, rank, level, Blue Essence, RP, owned champions and owned skins — nothing else. Your username, password and email are never read and never leave your PC. Nothing is uploaded anywhere; the export is a file you choose to share." />
+                           Text="Region, rank, level, Blue Essence, RP, owned champions, owned skins, owned chromas and owned profile icons — nothing else. Your username, password and email are never read and never leave your PC. Nothing is uploaded anywhere; the export is a file you choose to share." />
             </StackPanel>
         </Border>
 
@@ -73,13 +74,15 @@
                           HeadersVisibility="Column" GridLinesVisibility="Horizontal" Background="Transparent"
                           BorderThickness="0" CanUserAddRows="False" Visibility="Collapsed">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Region" Binding="{Binding Region}" Width="90" />
-                        <DataGridTextColumn Header="Rank" Binding="{Binding RankDisplay}" Width="130" />
-                        <DataGridTextColumn Header="Level" Binding="{Binding Level}" Width="70" />
-                        <DataGridTextColumn Header="Blue Essence" Binding="{Binding BlueEssence, StringFormat=N0}" Width="110" />
-                        <DataGridTextColumn Header="RP" Binding="{Binding RiotPoints, StringFormat=N0}" Width="90" />
-                        <DataGridTextColumn Header="Champions" Binding="{Binding ChampionCount}" Width="100" />
-                        <DataGridTextColumn Header="Skins" Binding="{Binding SkinCount}" Width="*" />
+                        <DataGridTextColumn Header="Region" Binding="{Binding Region}" Width="84" />
+                        <DataGridTextColumn Header="Rank" Binding="{Binding RankDisplay}" Width="110" />
+                        <DataGridTextColumn Header="Level" Binding="{Binding Level}" Width="64" />
+                        <DataGridTextColumn Header="Blue Essence" Binding="{Binding BlueEssence, StringFormat=N0}" Width="104" />
+                        <DataGridTextColumn Header="RP" Binding="{Binding RiotPoints, StringFormat=N0}" Width="84" />
+                        <DataGridTextColumn Header="Champions" Binding="{Binding ChampionCount}" Width="96" />
+                        <DataGridTextColumn Header="Skins" Binding="{Binding SkinCount}" Width="80" />
+                        <DataGridTextColumn Header="Chromas" Binding="{Binding ChromaCount}" Width="88" />
+                        <DataGridTextColumn Header="Profile icons" Binding="{Binding SummonerIconCount}" Width="*" />
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>
@@ -101,6 +104,7 @@
                        Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" />
 
             <Button Grid.Column="2" x:Name="ExportButton" Content="Export .json" Click="OnExportClick"
+                    Style="{StaticResource PrimaryButtonStyle}"
                     MinWidth="160" Height="38" IsEnabled="False" />
         </Grid>
     </Grid>

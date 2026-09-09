@@ -18,9 +18,11 @@ internal sealed record CaptureResult(AccountSnapshot? Snapshot, string? Error)
 ///     Reads the cosmetic inventory of whichever account is currently signed
 ///     into the League client, over the local LCU API.
 ///
-///     Six read-only GETs, no writes, and no credential endpoints are touched.
-///     The summoner id is fetched because the champion-inventory route is keyed
-///     by it, and is discarded once that call returns.
+///     Seven read-only GETs, no writes, and no credential endpoints are
+///     touched. Chromas cost no request of their own: the client files them in
+///     the skin catalog, so they arrive on a call already being made. The
+///     summoner id is fetched because the champion-inventory route is keyed by
+///     it, and is discarded once that call returns.
 /// </summary>
 internal static class AccountCapture
 {
@@ -31,6 +33,7 @@ internal static class AccountCapture
     private const string WalletEndpoint = "/lol-inventory/v1/wallet?currencyTypes=[%22RP%22,%22lol_blue_essence%22]";
     private const string RankedEndpoint = "/lol-ranked/v1/current-ranked-stats";
     private const string SkinCatalogEndpoint = "/lol-catalog/v1/items/CHAMPION_SKIN";
+    private const string SummonerIconCatalogEndpoint = "/lol-catalog/v1/items/SUMMONER_ICON";
 
     public static async Task<CaptureResult> CaptureAsync(CancellationToken cancellationToken = default)
     {
@@ -56,7 +59,9 @@ internal static class AccountCapture
         var rank = ApiResponseParser.ParseTier(rankedBody == null ? null : ApiResponseParser.ParseRankedStats(rankedBody));
 
         var championKeys = await GetOwnedChampionKeysAsync(summonerId, cancellationToken);
-        var skinIds = await GetOwnedSkinIdsAsync(cancellationToken);
+        var skins = CatalogParser.OwnedSkinsAndChromas(await GetAsync(SkinCatalogEndpoint, cancellationToken));
+        var summonerIconIds = CatalogParser.OwnedItemIds(
+            await GetAsync(SummonerIconCatalogEndpoint, cancellationToken));
 
         return CaptureResult.Ok(new AccountSnapshot
         {
@@ -66,7 +71,9 @@ internal static class AccountCapture
             BlueEssence = wallet?.BlueEssence ?? 0,
             RiotPoints = wallet?.RiotPoints ?? 0,
             ChampionKeys = championKeys,
-            SkinIds = skinIds,
+            SkinIds = skins.SkinIds,
+            ChromaIds = skins.ChromaIds,
+            SummonerIconIds = summonerIconIds,
         });
     }
 
@@ -106,38 +113,6 @@ internal static class AccountCapture
         }
 
         return [.. keys];
-    }
-
-    /// <summary>
-    ///     Owned skins as Riot item ids — the same numbering the website's
-    ///     `skins` table is keyed on, so no name matching is needed anywhere.
-    /// </summary>
-    private static async Task<IReadOnlyList<int>> GetOwnedSkinIdsAsync(CancellationToken cancellationToken)
-    {
-        var body = await GetAsync(SkinCatalogEndpoint, cancellationToken);
-        if (body == null || body.TrimStart().StartsWith('{')) return [];
-
-        JArray parsed;
-        try
-        {
-            parsed = JArray.Parse(body);
-        }
-        catch (Exception ex)
-        {
-            Logger.Debug(ex, "Could not parse the skin catalog");
-            return [];
-        }
-
-        var ids = new SortedSet<int>();
-        foreach (var item in parsed)
-        {
-            if (item["owned"]?.ToObject<bool?>() != true) continue;
-
-            var id = item["itemId"]?.ToObject<int?>();
-            if (id is > 0) ids.Add(id.Value);
-        }
-
-        return [.. ids];
     }
 
     private static async Task<string?> GetAsync(string endpoint, CancellationToken cancellationToken)
